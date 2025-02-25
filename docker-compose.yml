@@ -5,7 +5,30 @@ services:
     build: .
     image: usertask
     container_name: usertask_service
+    depends_on:
+      - postgres
     ports:
       - "8080:8080"
     environment:
       - PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=usertask_user
+      - DB_PASSWORD=usertask_password
+      - DB_NAME=usertask_db
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: usertask_db
+    restart: always
+    environment:
+      POSTGRES_USER: usertask_user
+      POSTGRES_PASSWORD: usertask_password
+      POSTGRES_DB: usertask_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
