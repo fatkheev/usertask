@@ -4,6 +4,17 @@ Pet
 
 ## Миграции
 
+Установить dotenv (если не установлен)
+Попробуй установить dotenv в систему:
+
+Для macOS (через Homebrew):
+
+brew install dotenv
+
+Для Linux (если есть в репозитории):
+
+sudo apt install dotenv
+
 Для запуска проекта требуется установка golang-migrate
 
 ```brew install golang-migrate```

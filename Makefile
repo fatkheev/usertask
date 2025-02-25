@@ -1,4 +1,9 @@
-.PHONY: run stop clean docker-build docker-run docker-stop docker-clean
+ifneq (,$(wildcard .env))
+    include .env
+    export
+endif
+
+.PHONY: run docker-build docker-run docker-stop docker-clean migrate-up migrate-down db-reset
 
 run:
 	go run cmd/main.go
@@ -16,14 +21,11 @@ docker-clean: docker-stop
 	docker-compose down --volumes --remove-orphans
 	docker rmi usertask || true
 
-# Применить миграции
 migrate-up:
-	migrate -path migrations -database "postgres://usertask_user:usertask_password@localhost:5432/usertask_db?sslmode=disable" up
+	migrate -path migrations -database "postgres://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)/$(DB_NAME)?sslmode=disable" up
 
-# Откатить миграции
 migrate-down:
-	migrate -path migrations -database "postgres://usertask_user:usertask_password@localhost:5432/usertask_db?sslmode=disable" down
-	
-# Очистить базу (полное удаление всех данных)
+	migrate -path migrations -database "postgres://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)/$(DB_NAME)?sslmode=disable" down
+
 db-reset:
-	docker exec -it usertask_db psql -U usertask_user -d usertask_db -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+	docker exec -it $(DB_CONTAINER) psql -U $(DB_USER) -d $(DB_NAME) -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
