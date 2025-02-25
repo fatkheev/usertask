@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"usertask/internal/database"
 	"usertask/internal/handlers"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,11 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("Не удалось загрузить .env, используются переменные окружения")
 	}
+
+	if err := database.InitDB(); err != nil {
+		log.Fatalf("Ошибка подключения к БД: %v", err)
+	}
+	defer database.CloseDB()
 
 	port := os.Getenv("PORT")
 	if port == "" {
