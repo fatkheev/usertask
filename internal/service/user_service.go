@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"usertask/internal/auth"
 	"usertask/internal/models"
 	"usertask/internal/repository"
 )
@@ -57,15 +58,21 @@ func (s *UserService) SetReferrer(userID int, referrerID int) error {
 	return s.repo.SetUserReferrer(userID, referrerID)
 }
 
-func (s *UserService) CreateUser(username string) (*models.User, error) {
+func (s *UserService) CreateUser(username string) (*models.User, string, error) {
 	if username == "" {
-		return nil, errors.New("имя пользователя не может быть пустым")
+		return nil, "", errors.New("имя пользователя не может быть пустым")
 	}
 
 	user, err := s.repo.CreateUser(username)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return user, nil
+	// Генерируем JWT токен
+	token, err := auth.GenerateToken(user.ID)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return user, token, nil
 }

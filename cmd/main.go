@@ -8,6 +8,7 @@ import (
 	"usertask/internal/handlers"
 	"usertask/internal/repository"
 	"usertask/internal/service"
+	"usertask/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -34,10 +35,16 @@ func main() {
 
 	router := gin.Default()
 
-	router.GET("/users/:id/status", userHandler.GetUserStatusGin)
-	router.POST("/users/:id/task/complete", userHandler.CompleteTaskGin)
-	router.POST("/users/:id/referrer", userHandler.SetReferrerGin)
 	router.POST("/users/create", userHandler.CreateUserGin)
+
+	// Закрываем эндпоинты JWT-аутентификацией
+	protected := router.Group("/")
+	protected.Use(middleware.AuthMiddleware())
+	{
+		protected.GET("/users/:id/status", userHandler.GetUserStatusGin)
+		protected.POST("/users/:id/task/complete", userHandler.CompleteTaskGin)
+		protected.POST("/users/:id/referrer", userHandler.SetReferrerGin)
+	}
 
 	fmt.Printf("Starting server on :%s\n", port)
 	log.Fatal(router.Run(":" + port))

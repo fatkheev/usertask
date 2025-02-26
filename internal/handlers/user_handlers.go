@@ -90,11 +90,14 @@ func (h *UserHandler) CreateUserGin(c *gin.Context) {
 		return
 	}
 
-	user, err := h.userService.CreateUser(req.Username)
+	user, token, err := h.userService.CreateUser(req.Username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, user)
+	c.JSON(http.StatusCreated, gin.H{
+		"user":  user,
+		"token": token,
+	})
 }

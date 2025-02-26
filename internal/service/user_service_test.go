@@ -92,8 +92,9 @@ func TestCreateUser(t *testing.T) {
 
 	mockRepo.On("CreateUser", "newuser").Return(user, nil)
 
-	createdUser, err := service.CreateUser("newuser")
+	createdUser, token, err := service.CreateUser("newuser")
 	assert.NoError(t, err)
 	assert.NotNil(t, createdUser)
 	assert.Equal(t, "newuser", createdUser.Username)
+	assert.NotEmpty(t, token)
 }
