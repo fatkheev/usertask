@@ -40,20 +40,25 @@ func (h *UserHandler) CompleteTaskGin(c *gin.Context) {
 	}
 
 	var req struct {
-		Points int `json:"points"`
+		TaskType string `json:"task_type"`
+		Points   int    `json:"points"`
 	}
 
-	if err := c.ShouldBindJSON(&req); err != nil || req.Points <= 0 {
+	if err := c.ShouldBindJSON(&req); err != nil || req.TaskType == "" || req.Points <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request payload"})
 		return
 	}
 
-	if err := h.userService.CompleteTask(userID, req.Points); err != nil {
+	err = h.userService.CompleteTask(userID, req.TaskType, req.Points)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "task completed", "points_added": req.Points})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "task completed",
+		"points_awarded": req.Points,
+	})
 }
 
 func (h *UserHandler) SetReferrerGin(c *gin.Context) {

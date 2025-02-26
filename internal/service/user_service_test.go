@@ -38,6 +38,16 @@ func (m *MockUserRepository) SetUserReferrer(userID int, referrerID int) error {
 	return args.Error(0)
 }
 
+func (m *MockUserRepository) CompleteTask(userID int, taskType string, points int) error {
+	args := m.Called(userID, taskType, points)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) GetUserReferrer(userID int) (int, error) {
+	args := m.Called(userID)
+	return args.Int(0), args.Error(1)
+}
+
 func TestGetUserStatus(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	service := NewUserService(mockRepo)
@@ -59,9 +69,29 @@ func TestCompleteTask(t *testing.T) {
 	user := &models.User{ID: 1, Username: "testuser", Points: 100}
 
 	mockRepo.On("GetUserByID", 1).Return(user, nil)
+	mockRepo.On("CompleteTask", 1, "test_task", 50).Return(nil)
+
+	mockRepo.On("GetUserReferrer", 1).Return(0, nil)
+
+	err := service.CompleteTask(1, "test_task", 50)
+	assert.NoError(t, err)
+
+	mockRepo.AssertCalled(t, "CompleteTask", 1, "test_task", 50)
+	mockRepo.AssertCalled(t, "GetUserReferrer", 1)
+}
+
+func TestCompleteTask_WithReferrerBonus(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	service := NewUserService(mockRepo)
+
+	user := &models.User{ID: 2, Username: "newuser", Points: 0}
+
+	mockRepo.On("GetUserByID", 2).Return(user, nil)
+	mockRepo.On("CompleteTask", 2, "test_task", 100).Return(nil)
+	mockRepo.On("GetUserReferrer", 2).Return(1, nil)
 	mockRepo.On("UpdateUserPoints", 1, 50).Return(nil)
 
-	err := service.CompleteTask(1, 50)
+	err := service.CompleteTask(2, "test_task", 100)
 	assert.NoError(t, err)
 
 	mockRepo.AssertCalled(t, "UpdateUserPoints", 1, 50)
@@ -71,17 +101,19 @@ func TestSetReferrer(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	service := NewUserService(mockRepo)
 
-	user := &models.User{ID: 2, Username: "user2"}
-	referrer := &models.User{ID: 1, Username: "user1"}
+	user := &models.User{ID: 2, Username: "user2", Points: 0, ReferrerID: nil}
+	referrer := &models.User{ID: 1, Username: "user1", Points: 0}
 
 	mockRepo.On("GetUserByID", 2).Return(user, nil)
 	mockRepo.On("GetUserByID", 1).Return(referrer, nil)
 	mockRepo.On("SetUserReferrer", 2, 1).Return(nil)
+	mockRepo.On("UpdateUserPoints", 1, 50).Return(nil) // Теперь проверяем начисление бонуса
 
 	err := service.SetReferrer(2, 1)
 	assert.NoError(t, err)
 
 	mockRepo.AssertCalled(t, "SetUserReferrer", 2, 1)
+	mockRepo.AssertCalled(t, "UpdateUserPoints", 1, 50) // Проверяем, что очки начисляются
 }
 
 func TestCreateUser(t *testing.T) {

@@ -11,6 +11,8 @@ type UserRepositoryInterface interface {
 	CreateUser(username string) (*models.User, error)
 	UpdateUserPoints(userID int, points int) error
 	SetUserReferrer(userID int, referrerID int) error
+	CompleteTask(userID int, taskType string, points int) error
+	GetUserReferrer(userID int) (int, error)
 }
 
 type UserRepository struct {
@@ -69,4 +71,47 @@ func (r *UserRepository) SetUserReferrer(userID int, referrerID int) error {
 	}
 
 	return nil
+}
+
+// CompleteTask добавляет запись о выполнении задания и начисляет очки пользователю.
+func (r *UserRepository) CompleteTask(userID int, taskType string, points int) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	// Записываем выполнение задания
+	_, err = tx.Exec(`INSERT INTO tasks (user_id, task_type, points) VALUES ($1, $2, $3)`,
+		userID, taskType, points)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Обновляем очки пользователя
+	_, err = tx.Exec(`UPDATE users SET points = points + $1 WHERE id = $2`, points, userID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
+}
+
+// GetUserReferrer получает ID реферера пользователя.
+func (r *UserRepository) GetUserReferrer(userID int) (int, error) {
+	var referrerID sql.NullInt64
+
+	err := r.db.QueryRow(`SELECT referrer_id FROM users WHERE id = $1`, userID).Scan(&referrerID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil // Нет реферера
+		}
+		return 0, err
+	}
+
+	if referrerID.Valid {
+		return int(referrerID.Int64), nil
+	}
+	return 0, nil // Если NULL, возвращаем 0
 }
