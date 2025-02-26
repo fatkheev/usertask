@@ -6,6 +6,8 @@ import (
 	"os"
 	"usertask/internal/database"
 	"usertask/internal/handlers"
+	"usertask/internal/repository"
+	"usertask/internal/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -21,6 +23,10 @@ func main() {
 	}
 	defer database.CloseDB()
 
+	userRepo := repository.NewUserRepository(database.DB)
+	userService := service.NewUserService(userRepo)
+	userHandler := handlers.NewUserHandler(userService)
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -28,10 +34,9 @@ func main() {
 
 	router := gin.Default()
 
-	router.GET("/users/:id/status", handlers.GetUserStatusGin)
-	router.GET("/users/leaderboard", handlers.GetLeaderboardGin)
-	router.POST("/users/:id/task/complete", handlers.CompleteTaskGin)
-	router.POST("/users/:id/referrer", handlers.SetReferrerGin)
+	router.GET("/users/:id/status", userHandler.GetUserStatusGin)
+	router.POST("/users/:id/task/complete", userHandler.CompleteTaskGin)
+	router.POST("/users/:id/referrer", userHandler.SetReferrerGin)
 
 	fmt.Printf("Starting server on :%s\n", port)
 	log.Fatal(router.Run(":" + port))

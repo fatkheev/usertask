@@ -22,10 +22,12 @@ docker-clean: docker-stop
 	docker rmi usertask || true
 
 migrate-up:
-	migrate -path migrations -database "postgres://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)/$(DB_NAME)?sslmode=disable" up
+	docker run --rm --network=host -v $(PWD)/migrations:/migrations migrate/migrate \
+	-path=/migrations -database "postgres://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)/$(DB_NAME)?sslmode=disable" up
 
 migrate-down:
-	migrate -path migrations -database "postgres://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)/$(DB_NAME)?sslmode=disable" down
+	docker run --rm --network=host -v $(PWD)/migrations:/migrations migrate/migrate \
+	-path=/migrations -database "postgres://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)/$(DB_NAME)?sslmode=disable" down -all
 
 db-reset:
 	docker exec -it $(DB_CONTAINER) psql -U $(DB_USER) -d $(DB_NAME) -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"

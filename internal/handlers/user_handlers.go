@@ -2,26 +2,80 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
+	"usertask/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-// Возвращаем информацию о пользователе
-func GetUserStatusGin(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "User status endpoint"})
+type UserHandler struct {
+	userService *service.UserService
 }
 
-// Возвращаем список лидеров по баллам
-func GetLeaderboardGin(c *gin.Context) {
-    c.JSON(http.StatusOK, gin.H{"message": "Leaderboard endpoint"})
+func NewUserHandler(userService *service.UserService) *UserHandler {
+	return &UserHandler{userService: userService}
 }
 
-// Отмечаем выполнение задания
-func CompleteTaskGin(c *gin.Context) {
-    c.JSON(http.StatusOK, gin.H{"message": "Complete task endpoint"})
+func (h *UserHandler) GetUserStatusGin(c *gin.Context) {
+	userID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+
+	user, err := h.userService.GetUserStatus(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
 }
 
-// Рефералка
-func SetReferrerGin(c *gin.Context) {
-    c.JSON(http.StatusOK, gin.H{"message": "Set referrer endpoint"})
+func (h *UserHandler) CompleteTaskGin(c *gin.Context) {
+	userID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+
+	var req struct {
+		Points int `json:"points"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil || req.Points <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request payload"})
+		return
+	}
+
+	if err := h.userService.CompleteTask(userID, req.Points); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "task completed", "points_added": req.Points})
+}
+
+func (h *UserHandler) SetReferrerGin(c *gin.Context) {
+	userID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+
+	var req struct {
+		ReferrerID int `json:"referrer_id"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil || req.ReferrerID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request payload"})
+		return
+	}
+
+	if err := h.userService.SetReferrer(userID, req.ReferrerID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "referrer set successfully"})
 }
