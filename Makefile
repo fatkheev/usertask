@@ -24,12 +24,19 @@ docker-clean: docker-stop
 	docker-compose down --volumes --remove-orphans
 	docker rmi usertask || true
 
+# Определяем путь к директории миграций (учитываем Windows и Unix)
+ifeq ($(OS),Windows_NT)
+    MIGRATIONS_PATH=$(shell cd)
+else
+    MIGRATIONS_PATH=$(PWD)
+endif
+
 migrate-up:
-	docker run --rm --network=host -v $(PWD)/migrations:/migrations migrate/migrate \
+	docker run --rm --network=host -v $(MIGRATIONS_PATH)/migrations:/migrations migrate/migrate \
 	-path=/migrations -database "postgres://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)/$(DB_NAME)?sslmode=disable" up
 
 migrate-down:
-	docker run --rm --network=host -v $(PWD)/migrations:/migrations migrate/migrate \
+	docker run --rm --network=host -v $(MIGRATIONS_PATH)/migrations:/migrations migrate/migrate \
 	-path=/migrations -database "postgres://$(DB_USER):$(DB_PASSWORD)@localhost:$(DB_PORT)/$(DB_NAME)?sslmode=disable" down -all
 
 db-reset:
