@@ -79,3 +79,22 @@ func (h *UserHandler) SetReferrerGin(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "referrer set successfully"})
 }
+
+func (h *UserHandler) CreateUserGin(c *gin.Context) {
+	var req struct {
+		Username string `json:"username"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil || req.Username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request payload"})
+		return
+	}
+
+	user, err := h.userService.CreateUser(req.Username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, user)
+}

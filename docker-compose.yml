@@ -1,17 +1,4 @@
-version: '3.9'
-
 services:
-  usertask:
-    build: .
-    image: usertask
-    container_name: usertask_service
-    depends_on:
-      - postgres
-    ports:
-      - "${PORT}:${PORT}"
-    env_file:
-      - .env
-
   postgres:
     image: postgres:15-alpine
     container_name: ${DB_CONTAINER}
@@ -26,6 +13,22 @@ services:
       - "${DB_PORT}:${DB_PORT}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}", "-d", "${DB_NAME}"]
+      interval: 5s
+      retries: 5
+
+  usertask:
+    build: .
+    image: usertask
+    container_name: usertask_service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${PORT}:${PORT}"
+    env_file:
+      - .env
 
 volumes:
   postgres_data:

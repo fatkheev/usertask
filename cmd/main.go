@@ -37,6 +37,7 @@ func main() {
 	router.GET("/users/:id/status", userHandler.GetUserStatusGin)
 	router.POST("/users/:id/task/complete", userHandler.CompleteTaskGin)
 	router.POST("/users/:id/referrer", userHandler.SetReferrerGin)
+	router.POST("/users/create", userHandler.CreateUserGin)
 
 	fmt.Printf("Starting server on :%s\n", port)
 	log.Fatal(router.Run(":" + port))

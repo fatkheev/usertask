@@ -83,3 +83,17 @@ func TestSetReferrer(t *testing.T) {
 
 	mockRepo.AssertCalled(t, "SetUserReferrer", 2, 1)
 }
+
+func TestCreateUser(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	service := NewUserService(mockRepo)
+
+	user := &models.User{ID: 3, Username: "newuser", Points: 0}
+
+	mockRepo.On("CreateUser", "newuser").Return(user, nil)
+
+	createdUser, err := service.CreateUser("newuser")
+	assert.NoError(t, err)
+	assert.NotNil(t, createdUser)
+	assert.Equal(t, "newuser", createdUser.Username)
+}

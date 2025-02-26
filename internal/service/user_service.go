@@ -56,3 +56,16 @@ func (s *UserService) SetReferrer(userID int, referrerID int) error {
 
 	return s.repo.SetUserReferrer(userID, referrerID)
 }
+
+func (s *UserService) CreateUser(username string) (*models.User, error) {
+	if username == "" {
+		return nil, errors.New("имя пользователя не может быть пустым")
+	}
+
+	user, err := s.repo.CreateUser(username)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
