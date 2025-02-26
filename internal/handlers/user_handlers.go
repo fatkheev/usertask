@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"usertask/internal/auth"
 	"usertask/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -104,5 +105,37 @@ func (h *UserHandler) CreateUserGin(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"user":  user,
 		"token": token,
+	})
+}
+
+func (h *UserHandler) RefreshTokenGin(c *gin.Context) {
+	var req struct {
+		UserID int `json:"user_id"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil || req.UserID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request payload"})
+		return
+	}
+
+	user, err := h.userService.GetUserStatus(req.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if user == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+
+	token, err := auth.GenerateToken(req.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "new token generated",
+		"token":   token,
 	})
 }
