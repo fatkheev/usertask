@@ -107,13 +107,15 @@ func TestSetReferrer(t *testing.T) {
 	mockRepo.On("GetUserByID", 2).Return(user, nil)
 	mockRepo.On("GetUserByID", 1).Return(referrer, nil)
 	mockRepo.On("SetUserReferrer", 2, 1).Return(nil)
-	mockRepo.On("UpdateUserPoints", 1, 50).Return(nil) // Теперь проверяем начисление бонуса
+	mockRepo.On("UpdateUserPoints", 1, 50).Return(nil) 
+	mockRepo.On("CompleteTask", 1, "referral", 50).Return(nil) // Добавляем ожидаемый вызов
 
 	err := service.SetReferrer(2, 1)
 	assert.NoError(t, err)
 
 	mockRepo.AssertCalled(t, "SetUserReferrer", 2, 1)
-	mockRepo.AssertCalled(t, "UpdateUserPoints", 1, 50) // Проверяем, что очки начисляются
+	mockRepo.AssertCalled(t, "UpdateUserPoints", 1, 50)
+	mockRepo.AssertCalled(t, "CompleteTask", 1, "referral", 50) // Проверяем вызов
 }
 
 func TestCreateUser(t *testing.T) {
