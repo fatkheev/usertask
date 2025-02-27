@@ -130,3 +130,28 @@ func TestCreateUser(t *testing.T) {
 	assert.Equal(t, "newuser", createdUser.Username)
 	assert.NotEmpty(t, token)
 }
+
+func (m *MockUserRepository) GetLeaderboard(limit int) ([]models.User, error) {
+	args := m.Called(limit)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.User), args.Error(1)
+}
+
+func TestGetLeaderboard(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	service := NewUserService(mockRepo)
+
+	users := []models.User{
+		{ID: 1, Username: "Alice", Points: 200},
+		{ID: 2, Username: "Bob", Points: 150},
+	}
+
+	mockRepo.On("GetLeaderboard", 2).Return(users, nil)
+
+	result, err := service.GetLeaderboard(2)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	assert.Equal(t, "Alice", result[0].Username)
+}

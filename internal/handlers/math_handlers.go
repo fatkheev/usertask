@@ -18,6 +18,14 @@ func NewMathHandler(userService *service.UserService) *MathHandler {
 
 var MathProblemStorage = make(map[int]service.MathProblem)
 
+// GetMathProblem выдаёт пользователю случайную математическую задачу.
+// @Summary Получить математическую задачу
+// @Description Генерирует и возвращает пользователю случайную математическую задачу.
+// @Tags MathTasks
+// @Security BearerAuth
+// @Param id path int true "ID пользователя"
+// @Success 200 {object} models.ResponseMathProblem "Математическая задача успешно сгенерирована"
+// @Router /users/{id}/task/math [get]
 func (h *MathHandler) GetMathProblem(c *gin.Context) {
 	userID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -35,6 +43,18 @@ func (h *MathHandler) GetMathProblem(c *gin.Context) {
 	})
 }
 
+// SolveMathProblem проверяет ответ на математическую задачу.
+// @Summary Решить математическую задачу
+// @Description Проверяет правильность ответа на задачу, начисляет очки за верный ответ.
+// @Tags MathTasks
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path int true "ID пользователя"
+// @Param request body models.RequestSolveMathProblem true "Ответ пользователя на задачу"
+// @Success 200 {object} models.ResponseSolveMathProblem "Ответ правильный, начислены очки"
+// @Failure 400 {object} models.ErrorSolveMathIncorrectAnswer "Неверный ответ"
+// @Router /users/{id}/task/math/solve [post]
 func (h *MathHandler) SolveMathProblem(c *gin.Context) {
 	userID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

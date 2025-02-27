@@ -30,5 +30,16 @@ services:
     env_file:
       - .env
 
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: swagger_ui
+    restart: always
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./docs:/usr/share/nginx/html/docs
+    environment:
+      SWAGGER_JSON: /usr/share/nginx/html/docs/swagger.json
+
 volumes:
   postgres_data:

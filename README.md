@@ -40,3 +40,10 @@ sudo apt install dotenv
 
 - Таблица users: id, username, points (баллы), referrer_id (реферал).
 - Таблица tasks: id, user_id, task_type, points, completed_at.
+
+## Swagger
+
+Установим swag
+
+```go install github.com/swaggo/swag/cmd/swag@latest```
+

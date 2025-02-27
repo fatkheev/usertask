@@ -13,6 +13,7 @@ type UserRepositoryInterface interface {
 	SetUserReferrer(userID int, referrerID int) error
 	CompleteTask(userID int, taskType string, points int) error
 	GetUserReferrer(userID int) (int, error)
+	GetLeaderboard(limit int) ([]models.User, error)
 }
 
 type UserRepository struct {
@@ -73,7 +74,6 @@ func (r *UserRepository) SetUserReferrer(userID int, referrerID int) error {
 	return nil
 }
 
-// CompleteTask добавляет запись о выполнении задания и начисляет очки пользователю.
 func (r *UserRepository) CompleteTask(userID int, taskType string, points int) error {
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -98,14 +98,13 @@ func (r *UserRepository) CompleteTask(userID int, taskType string, points int) e
 	return tx.Commit()
 }
 
-// GetUserReferrer получает ID реферера пользователя.
 func (r *UserRepository) GetUserReferrer(userID int) (int, error) {
 	var referrerID sql.NullInt64
 
 	err := r.db.QueryRow(`SELECT referrer_id FROM users WHERE id = $1`, userID).Scan(&referrerID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return 0, nil // Нет реферера
+			return 0, nil
 		}
 		return 0, err
 	}
@@ -113,5 +112,29 @@ func (r *UserRepository) GetUserReferrer(userID int) (int, error) {
 	if referrerID.Valid {
 		return int(referrerID.Int64), nil
 	}
-	return 0, nil // Если NULL, возвращаем 0
+	return 0, nil
+}
+
+func (r *UserRepository) GetLeaderboard(limit int) ([]models.User, error) {
+	rows, err := r.db.Query(`
+		SELECT id, username, points, referrer_id, created_at
+		FROM users
+		ORDER BY points DESC
+		LIMIT $1`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []models.User
+	for rows.Next() {
+		var user models.User
+		err := rows.Scan(&user.ID, &user.Username, &user.Points, &user.ReferrerID, &user.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
 }

@@ -1,0 +1,336 @@
+basePath: /
+definitions:
+  models.ErrorRefreshTokenUserNotFound:
+    properties:
+      error:
+        example: пользователь не найден
+        type: string
+    type: object
+  models.ErrorSetReferrerConflict:
+    properties:
+      error:
+        example: реферальный код уже установлен
+        type: string
+    type: object
+  models.ErrorSolveMathIncorrectAnswer:
+    properties:
+      error:
+        example: неверный ответ
+        type: string
+    type: object
+  models.RequestCompleteTask:
+    properties:
+      points:
+        example: 50
+        type: integer
+      task_type:
+        example: math_problem
+        type: string
+    type: object
+  models.RequestCreateUser:
+    properties:
+      username:
+        description: Пример имени пользователя
+        example: user123
+        type: string
+    type: object
+  models.RequestRefreshToken:
+    properties:
+      user_id:
+        example: 1
+        type: integer
+    type: object
+  models.RequestSetReferrer:
+    properties:
+      referrer_id:
+        example: 1
+        type: integer
+    type: object
+  models.RequestSolveMathProblem:
+    properties:
+      answer:
+        example: 42
+        type: integer
+    type: object
+  models.ResponseCompleteTask:
+    properties:
+      message:
+        example: task completed
+        type: string
+      points_awarded:
+        example: 50
+        type: integer
+    type: object
+  models.ResponseCreateUser:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user:
+        $ref: '#/definitions/models.User'
+    type: object
+  models.ResponseMathProblem:
+    properties:
+      operand1:
+        example: 5
+        type: integer
+      operand2:
+        example: 3
+        type: integer
+      operation:
+        example: +
+        type: string
+    type: object
+  models.ResponseRefreshToken:
+    properties:
+      message:
+        example: new token generated
+        type: string
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  models.ResponseSetReferrer:
+    properties:
+      message:
+        example: referrer set successfully
+        type: string
+    type: object
+  models.ResponseSolveMathProblem:
+    properties:
+      message:
+        example: correct answer!
+        type: string
+      points_awarded:
+        example: 50
+        type: integer
+    type: object
+  models.User:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      points:
+        type: integer
+      referrer_id:
+        type: integer
+      username:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API для управления пользователями и заданиями.
+  title: UserTask API
+  version: "1.0"
+paths:
+  /users/{id}/referrer:
+    post:
+      consumes:
+      - application/json
+      description: Позволяет пользователю указать, кто его пригласил. Если успешен,
+        рефереру начисляется бонус и создается запись в tasks.
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID реферера
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.RequestSetReferrer'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Реферальный код успешно установлен
+          schema:
+            $ref: '#/definitions/models.ResponseSetReferrer'
+        "500":
+          description: Реферальный код уже установлен
+          schema:
+            $ref: '#/definitions/models.ErrorSetReferrerConflict'
+      security:
+      - BearerAuth: []
+      summary: Установить реферала
+      tags:
+      - Users
+  /users/{id}/status:
+    get:
+      description: Возвращает детали пользователя по его ID
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      security:
+      - BearerAuth: []
+      summary: Получить статус пользователя
+      tags:
+      - Users
+  /users/{id}/task/complete:
+    post:
+      consumes:
+      - application/json
+      description: Добавляет пользователю очки за выполнение задания
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Детали задания
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.RequestCompleteTask'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Задание успешно завершено
+          schema:
+            $ref: '#/definitions/models.ResponseCompleteTask'
+      security:
+      - BearerAuth: []
+      summary: Завершить задание
+      tags:
+      - Tasks
+  /users/{id}/task/math:
+    get:
+      description: Генерирует и возвращает пользователю случайную математическую задачу.
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: Математическая задача успешно сгенерирована
+          schema:
+            $ref: '#/definitions/models.ResponseMathProblem'
+      security:
+      - BearerAuth: []
+      summary: Получить математическую задачу
+      tags:
+      - MathTasks
+  /users/{id}/task/math/solve:
+    post:
+      consumes:
+      - application/json
+      description: Проверяет правильность ответа на задачу, начисляет очки за верный
+        ответ.
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Ответ пользователя на задачу
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.RequestSolveMathProblem'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ответ правильный, начислены очки
+          schema:
+            $ref: '#/definitions/models.ResponseSolveMathProblem'
+        "400":
+          description: Неверный ответ
+          schema:
+            $ref: '#/definitions/models.ErrorSolveMathIncorrectAnswer'
+      security:
+      - BearerAuth: []
+      summary: Решить математическую задачу
+      tags:
+      - MathTasks
+  /users/create:
+    post:
+      consumes:
+      - application/json
+      description: Регистрирует нового пользователя и выдаёт токен
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.RequestCreateUser'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Пользователь успешно создан
+          schema:
+            $ref: '#/definitions/models.ResponseCreateUser'
+      summary: Создать пользователя
+      tags:
+      - Users
+  /users/leaderboard:
+    get:
+      description: Возвращает список пользователей с наибольшим количеством очков.
+      parameters:
+      - description: Количество пользователей в списке (по умолчанию 10)
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: Список лидеров
+          schema:
+            items:
+              $ref: '#/definitions/models.User'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Получить лидерборд
+      tags:
+      - Leaderboard
+  /users/token/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Генерирует новый JWT-токен для пользователя
+      parameters:
+      - description: ID пользователя
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.RequestRefreshToken'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Новый токен успешно сгенерирован
+          schema:
+            $ref: '#/definitions/models.ResponseRefreshToken'
+        "500":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/models.ErrorRefreshTokenUserNotFound'
+      summary: Обновить токен
+      tags:
+      - Auth
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"usertask/docs"
 	"usertask/internal/database"
 	"usertask/internal/handlers"
 	"usertask/internal/middleware"
@@ -12,8 +13,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// @title UserTask API
+// @version 1.0
+// @description API для управления пользователями и заданиями.
+// @host localhost:8080
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("Не удалось загрузить .env, используются переменные окружения")
@@ -36,6 +47,9 @@ func main() {
 
 	router := gin.Default()
 
+	docs.SwaggerInfo.BasePath = "/"
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	router.POST("/users/create", userHandler.CreateUserGin)
 	router.POST("/users/token/refresh", userHandler.RefreshTokenGin)
 
@@ -47,6 +61,7 @@ func main() {
 		protected.POST("/users/:id/referrer", userHandler.SetReferrerGin)
 		protected.GET("/users/:id/task/math", mathHandler.GetMathProblem)
 		protected.POST("/users/:id/task/math/solve", mathHandler.SolveMathProblem)
+		protected.GET("/users/leaderboard", userHandler.GetLeaderboardGin)
 	}
 
 	fmt.Printf("Starting server on :%s\n", port)

@@ -24,7 +24,8 @@ docker-clean: docker-stop
 	docker-compose down --volumes --remove-orphans
 	docker rmi usertask || true
 
-# Определяем путь к директории миграций (учитываем Windows и Unix)
+docker-rebuild: swag-rebuild docker-stop docker-run
+
 ifeq ($(OS),Windows_NT)
     MIGRATIONS_PATH=$(shell cd)
 else
@@ -41,3 +42,7 @@ migrate-down:
 
 db-reset:
 	docker exec -it $(DB_CONTAINER) psql -U $(DB_USER) -d $(DB_NAME) -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+
+swag-rebuild:
+	rm -rf docs
+	swag init -g cmd/main.go

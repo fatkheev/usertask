@@ -1,0 +1,515 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API для управления пользователями и заданиями.",
+        "title": "UserTask API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/users/create": {
+            "post": {
+                "description": "Регистрирует нового пользователя и выдаёт токен",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Создать пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RequestCreateUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Пользователь успешно создан",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseCreateUser"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/leaderboard": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список пользователей с наибольшим количеством очков.",
+                "tags": [
+                    "Leaderboard"
+                ],
+                "summary": "Получить лидерборд",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Количество пользователей в списке (по умолчанию 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список лидеров",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.User"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/token/refresh": {
+            "post": {
+                "description": "Генерирует новый JWT-токен для пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Обновить токен",
+                "parameters": [
+                    {
+                        "description": "ID пользователя",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RequestRefreshToken"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Новый токен успешно сгенерирован",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseRefreshToken"
+                        }
+                    },
+                    "500": {
+                        "description": "Пользователь не найден",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorRefreshTokenUserNotFound"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}/referrer": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Позволяет пользователю указать, кто его пригласил. Если успешен, рефереру начисляется бонус и создается запись в tasks.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Установить реферала",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID пользователя",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "ID реферера",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RequestSetReferrer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Реферальный код успешно установлен",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSetReferrer"
+                        }
+                    },
+                    "500": {
+                        "description": "Реферальный код уже установлен",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorSetReferrerConflict"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}/status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает детали пользователя по его ID",
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Получить статус пользователя",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID пользователя",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}/task/complete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Добавляет пользователю очки за выполнение задания",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Завершить задание",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID пользователя",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Детали задания",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RequestCompleteTask"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Задание успешно завершено",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseCompleteTask"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}/task/math": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Генерирует и возвращает пользователю случайную математическую задачу.",
+                "tags": [
+                    "MathTasks"
+                ],
+                "summary": "Получить математическую задачу",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID пользователя",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Математическая задача успешно сгенерирована",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseMathProblem"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}/task/math/solve": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Проверяет правильность ответа на задачу, начисляет очки за верный ответ.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MathTasks"
+                ],
+                "summary": "Решить математическую задачу",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID пользователя",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Ответ пользователя на задачу",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RequestSolveMathProblem"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ответ правильный, начислены очки",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResponseSolveMathProblem"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный ответ",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorSolveMathIncorrectAnswer"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.ErrorRefreshTokenUserNotFound": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "пользователь не найден"
+                }
+            }
+        },
+        "models.ErrorSetReferrerConflict": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "реферальный код уже установлен"
+                }
+            }
+        },
+        "models.ErrorSolveMathIncorrectAnswer": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "неверный ответ"
+                }
+            }
+        },
+        "models.RequestCompleteTask": {
+            "type": "object",
+            "properties": {
+                "points": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "task_type": {
+                    "type": "string",
+                    "example": "math_problem"
+                }
+            }
+        },
+        "models.RequestCreateUser": {
+            "type": "object",
+            "properties": {
+                "username": {
+                    "description": "Пример имени пользователя",
+                    "type": "string",
+                    "example": "user123"
+                }
+            }
+        },
+        "models.RequestRefreshToken": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "models.RequestSetReferrer": {
+            "type": "object",
+            "properties": {
+                "referrer_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "models.RequestSolveMathProblem": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "integer",
+                    "example": 42
+                }
+            }
+        },
+        "models.ResponseCompleteTask": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "task completed"
+                },
+                "points_awarded": {
+                    "type": "integer",
+                    "example": 50
+                }
+            }
+        },
+        "models.ResponseCreateUser": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "user": {
+                    "$ref": "#/definitions/models.User"
+                }
+            }
+        },
+        "models.ResponseMathProblem": {
+            "type": "object",
+            "properties": {
+                "operand1": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "operand2": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "operation": {
+                    "type": "string",
+                    "example": "+"
+                }
+            }
+        },
+        "models.ResponseRefreshToken": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "new token generated"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+            }
+        },
+        "models.ResponseSetReferrer": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "referrer set successfully"
+                }
+            }
+        },
+        "models.ResponseSolveMathProblem": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "correct answer!"
+                },
+                "points_awarded": {
+                    "type": "integer",
+                    "example": 50
+                }
+            }
+        },
+        "models.User": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "points": {
+                    "type": "integer"
+                },
+                "referrer_id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

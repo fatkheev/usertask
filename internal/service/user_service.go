@@ -35,19 +35,18 @@ func (s *UserService) CompleteTask(userID int, taskType string, points int) erro
 		return errors.New("пользователь не найден")
 	}
 
-	// Выполняем задание и начисляем очки пользователю
+	// начисляем очки пользователю
 	err = s.repo.CompleteTask(userID, taskType, points)
 	if err != nil {
 		return err
 	}
 
-	// Проверяем, есть ли у пользователя реферер
+	// есть ли у пользователя реферер
 	referrerID, err := s.repo.GetUserReferrer(userID)
 	if err != nil {
 		return err
 	}
 
-	// Если у пользователя есть реферер, начисляем ему бонусные 50 очков
 	if referrerID > 0 {
 		err = s.repo.UpdateUserPoints(referrerID, 50)
 		if err != nil {
@@ -59,12 +58,11 @@ func (s *UserService) CompleteTask(userID int, taskType string, points int) erro
 }
 
 func (s *UserService) SetReferrer(userID int, referrerID int) error {
-	// Нельзя указать самого себя в качестве реферера
 	if userID == referrerID {
 		return errors.New("нельзя указать самого себя как реферера")
 	}
 
-	// Проверяем, существует ли пользователь
+	// существует ли пользователь
 	user, err := s.repo.GetUserByID(userID)
 	if err != nil {
 		return err
@@ -73,12 +71,12 @@ func (s *UserService) SetReferrer(userID int, referrerID int) error {
 		return errors.New("пользователь не найден")
 	}
 
-	// Проверяем, что у пользователя ещё нет реферера
+	// у пользователя ещё нет реферера
 	if user.ReferrerID != nil {
 		return errors.New("реферальный код уже установлен")
 	}
 
-	// Проверяем, существует ли реферер
+	// существует ли реферер
 	referrer, err := s.repo.GetUserByID(referrerID)
 	if err != nil {
 		return err
@@ -87,14 +85,19 @@ func (s *UserService) SetReferrer(userID int, referrerID int) error {
 		return errors.New("реферер не найден")
 	}
 
-	// Устанавливаем реферальный код и сразу начисляем бонус рефереру
 	err = s.repo.SetUserReferrer(userID, referrerID)
 	if err != nil {
 		return err
 	}
 
-	// Начисляем бонус рефереру
-	err = s.repo.UpdateUserPoints(referrerID, 50)
+	// бонус рефереру
+	bonusPoints := 50
+	err = s.repo.UpdateUserPoints(referrerID, bonusPoints)
+	if err != nil {
+		return err
+	}
+
+	err = s.repo.CompleteTask(referrerID, "referral", bonusPoints)
 	if err != nil {
 		return err
 	}
@@ -112,11 +115,23 @@ func (s *UserService) CreateUser(username string) (*models.User, string, error) 
 		return nil, "", err
 	}
 
-	// Генерируем JWT токен
 	token, err := auth.GenerateToken(user.ID)
 	if err != nil {
 		return nil, "", err
 	}
 
 	return user, token, nil
+}
+
+func (s *UserService) GetLeaderboard(limit int) ([]models.User, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+
+	users, err := s.repo.GetLeaderboard(limit)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
