@@ -131,11 +131,118 @@ http://localhost:8080/swagger/index.html
 
 ## API Методы
 
-- POST /users/create — создание пользователя
-- POST /users/token/refresh — обновление токена
-- GET /users/:id/status — получение информации о пользователе
-- POST /users/:id/task/complete — завершение задания
-- POST /users/:id/referrer — установка реферала
-- GET /users/:id/task/math — получение математической задачи
-- POST /users/:id/task/math/solve — отправка ответа на задачу
-- GET /users/leaderboard — лидерборд
+### 1. POST /users/create — создание пользователя
+### Тело запроса:
+```
+{
+  "username": "user123"
+}
+```
+### Ответ:
+```
+{
+  "user": {
+    "id": 1,
+    "username": "user123",
+    "points": 0
+  },
+  "token": "<JWT_TOKEN>"
+}
+```
+---
+
+### 2. POST /users/token/refresh — обновление токена
+### Тело запроса:
+```
+{
+  "user_id": 1
+}
+```
+### Ответ:
+```
+{
+  "message": "new token generated",
+  "token": "<JWT_TOKEN>"
+}
+```
+---
+
+### 3. GET /users/:id/status — получение информации о пользователе
+### Ответ:
+```
+{
+  "id": 1,
+  "username": "user123",
+  "points": 100
+}
+```
+---
+
+### 4. POST /users/:id/task/complete — завершение задания
+### Тело запроса:
+```
+{
+  "task_type": "task",
+  "points": 50
+}
+```
+### Ответ:
+```
+{
+  "message": "task completed",
+  "points_awarded": 50
+}
+```
+---
+
+### 5. POST /users/:id/referrer — установка реферала
+### Тело запроса:
+```
+{
+  "referrer_id": 2
+}
+```
+### Ответ:
+```
+{
+  "message": "referrer set successfully"
+}
+```
+---
+
+### 6. GET /users/:id/task/math — получение математической задачи
+### Ответ:
+```
+{
+  "operand1": 5,
+  "operand2": 3,
+  "operation": "+"
+}
+```
+---
+
+### 6. POST /users/:id/task/math/solve — отправка ответа на задачу
+### Тело запроса:
+```
+{
+  "answer": 8
+}
+```
+### Ответ:
+```
+{
+  "message": "correct answer!",
+  "points_awarded": 50
+}
+```
+---
+
+### 7. GET /users/leaderboard — лидерборд
+### Ответ:
+```
+[
+  { "id": 1, "username": "Alice", "points": 500 },
+  { "id": 2, "username": "Bob", "points": 450 }
+]
+```
+---
